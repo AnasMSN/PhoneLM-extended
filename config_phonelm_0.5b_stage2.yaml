@@ -1,0 +1,29 @@
+name: PhoneLM-0.5B-Stage2
+wandb: True
+resume: False
+profile: False
+training:
+    stage1_ckpt: "./checkpoints/PhoneLM-0.5B/best_ckpt"
+    use_bf16: True
+    context_size: 2048
+    num_train_epochs: 1
+    learning_rate: 4e-5
+    adam_beta1: 0.9
+    adam_beta2: 0.95
+    adam_epsilon: 1e-8
+    weight_decay: 0.1
+    deepspeed_config: "./ds_config_decaylr.json"
+    per_device_train_batch_size: 96
+    per_device_eval_batch_size: 48
+    gradient_accumulation_steps: 1
+    set_logging_steps: 20
+    set_compute_metrics: False
+    bad_epochs_limit: 5
+    warmup_steps: 0
+    set_eval_steps: 1000
+    set_save_steps: 1000
+model:
+    tokenizer_path: "./tokenizer"  
+datasets:
+    path: "./train_datasets_stage2"
+    val_rate: 0.002
