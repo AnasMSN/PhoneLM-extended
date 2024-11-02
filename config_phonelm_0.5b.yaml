@@ -1,4 +1,4 @@
-name: PhoneLM-0.5B
+name: PhoneLM-0.5B-Base
 wandb: True
 resume: False
 profile: False
