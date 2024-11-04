@@ -24,3 +24,23 @@ out = model.generate(**inp,
 text = tokenizer.decode(out[0], skip_special_tokens=True)
 
 ```
+
+## how to sft
+Initial dataset structure
+```
+- train_datasets_instruct
+|
+- - - dataset_00
+    |
+    - - -data_001.parquet
+    |
+    - - -data_002.parquet
+    |
+    - - - ...
+```
+
+Launch train command
+```shell
+deepspeed train_instruct.py --config config_phonelm_1.5b_instruct.yaml
+```
+If it is the first time loading train_datasets_instruct, two directories train_dataset_test and val_dataset_test will be generated in the train_datasets_instruct directory. Subsequently, data will be read directly from these two directories.
