@@ -59,31 +59,40 @@ print(f"config: {config.config}")
 
 def load_and_split_data(file_path, split_ratio=0.005):
     """
-    加载指定文件并分割为训练集和验证集。
+    Load the specified file and split it into training and validation sets.
     
-    参数:
-    - file_path: 文件的路径。
-    - split_ratio: 验证集占总数据集的比例。
+    Parameters:
+    - file_path: Path to the file.
+    - split_ratio: Proportion of the validation set in the total dataset.
     
-    返回:
-    - 分割后的数据集，包括训练集和验证集。
+    Returns:
+    - Split datasets, including training and validation sets.
     """
-    print("s:", split_ratio)
-    # 文件格式
+    print("Split ratio:", split_ratio)
+    # File format
     dataset = load_dataset('parquet', data_files=file_path)
     
-    # 分割数据集
-    
+    # Split dataset
     split_dataset = dataset['train'].train_test_split(test_size=split_ratio)
     
-    # 确保分割后的数据集包含'train'和'val'键
+    # Ensure the split dataset contains 'train' and 'test' keys
     if 'train' in split_dataset and 'test' in split_dataset:
         return split_dataset['train'], split_dataset['test']
     else:
-        raise ValueError("数据集分割失败，未能生成训练集和验证集。")
+        raise ValueError("Dataset split failed, training and validation sets not generated.")
 
 
 def build_sft_dataset(data_path, split_ratio=0.005):
+    """
+    Build the training and validation datasets for SFT.
+
+    Parameters:
+    - data_path: Path to the directory containing the sft data files.
+    - split_ratio: Proportion of the validation set in the total dataset.
+
+    Returns:
+    - Training and validation datasets.
+    """
     train_datasets = []
     val_datasets = []
 
@@ -93,43 +102,42 @@ def build_sft_dataset(data_path, split_ratio=0.005):
     print(val_dataset_path)
 
     if os.path.isdir(train_dataset_path) and os.path.isdir(val_dataset_path):
-        # 加载之前保存的数据集
+        # Load previously saved datasets
         train_datasets = load_from_disk(train_dataset_path)
-        print("train dataset load finish")
+        print("Train dataset loaded successfully")
         val_datasets = load_from_disk(val_dataset_path)
-        print("val dataset load finish")
+        print("Validation dataset loaded successfully")
         return train_datasets, val_datasets
 
-    # 遍历processed_chat目录下的所有文件
+    # Traverse all files in the processed_chat directory
     for root, dirs, files in os.walk(data_path):
         for file in files:
             file_path = os.path.join(root, file)
-            print(f"处理文件: {file_path}")
+            print(f"Processing file: {file_path}")
         
-            # 加载并分割数据集
+            # Load and split dataset
             train_dataset, val_dataset = load_and_split_data(file_path)
         
-            # 将当前文件的训练集和验证集添加到列表中
+            # Add the current file's training and validation sets to the list
             train_datasets.append(train_dataset)
             val_datasets.append(val_dataset)
 
-    # 合并所有文件的训练集和验证集
+    # Combine all files' training and validation sets
     combined_train_dataset = concatenate_datasets(train_datasets).shuffle(seed=42)
     combined_val_dataset = concatenate_datasets(val_datasets).shuffle(seed=42)
 
-    print(f"总训练集大小: {len(combined_train_dataset)}")
-    print(f"总验证集大小: {len(combined_val_dataset)}")
+    print(f"Total training set size: {len(combined_train_dataset)}")
+    print(f"Total validation set size: {len(combined_val_dataset)}")
 
     return combined_train_dataset, combined_val_dataset
 
 
 def train(tokenizer, model, train_dataset, val_dataset):
-    # 设置训练参数
+    # Set training arguments
     training_args = TrainingArguments(
         # We do not dispatch the dataloader, so each process will load the full dataset and pick by process index.
         accelerator_config={
             "dispatch_batches": False
-            # "split_batches": True
         },
         output_dir=output_dir,
         per_device_train_batch_size=per_device_train_batch_size,
@@ -138,9 +146,6 @@ def train(tokenizer, model, train_dataset, val_dataset):
         gradient_checkpointing=True,
         metric_for_best_model="eval_loss",
         max_steps=max_steps,
-        # eval_accumulation_steps=2,  # 防止评估时导致OOM
-        # eval_accumulation_steps=2,  # 防止评估时导致OOM
-        # predict_with_generate=True,
         bf16=use_bf16,
         fp16=not use_bf16,
         learning_rate=learning_rate,
@@ -153,13 +158,13 @@ def train(tokenizer, model, train_dataset, val_dataset):
         # logging & evaluation strategies
         logging_dir="logs",
         logging_strategy="steps",
-        logging_steps=set_logging_steps,  # 每50个step打印一次log
+        logging_steps=set_logging_steps,  # Log every set_logging_steps steps
         evaluation_strategy="steps",
-        eval_steps=set_eval_steps,  # 每500个step进行一次评估
+        eval_steps=set_eval_steps,  # Evaluate every set_eval_steps steps
         save_steps=set_save_steps,
         save_total_limit=6,
         load_best_model_at_end=True,
-        deepspeed=deepspeed_config,  # deepspeed配置文件的位置
+        deepspeed=deepspeed_config,  # Path to deepspeed config file
         report_to="all" if FLG_WANDB else "none",
     )
     print("Training arguments:", training_args)
@@ -174,12 +179,11 @@ def train(tokenizer, model, train_dataset, val_dataset):
                 skip_first=3, wait=1, warmup=1, active=2, repeat=1
             ),
             on_trace_ready=lambda p: trace_handler(p, arg.local_rank),
-            # on_trace_ready=trace_handler,
             with_stack=True,
             profile_memory=True,
             experimental_config=torch._C._profiler._ExperimentalConfig(verbose=True),
         ) as prof:
-            # 模型训练
+            # Model training
             trainer = SFTTrainer(
                 model=model,
                 args=training_args,
@@ -189,7 +193,7 @@ def train(tokenizer, model, train_dataset, val_dataset):
                 max_seq_length=2048,
                 packing=True,
                 compute_metrics=compute_metrics if set_compute_metrics else None,
-                tokenizer=tokenizer,  # Remove the extra comma here
+                tokenizer=tokenizer,
                 callbacks=(
                     [EvaluateCallback(bad_epochs_limit, arg.local_rank, FLG_WANDB), TraceCallback(prof)]
                     if PROF and is_main_process_using_local_rank(arg.local_rank)
@@ -212,7 +216,7 @@ def train(tokenizer, model, train_dataset, val_dataset):
             packing=True,
             max_seq_length=2048,
             compute_metrics=compute_metrics if set_compute_metrics else None,
-            tokenizer=tokenizer,  # Remove the extra comma here
+            tokenizer=tokenizer,
             callbacks=[EvaluateCallback(bad_epochs_limit, arg.local_rank, FLG_WANDB)],
         )
         print("Start training")
