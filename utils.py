@@ -8,6 +8,7 @@ import os
 import numpy as np
 import wandb
 import time
+import torch
 from transformers import (
     AutoTokenizer,
     TrainerCallback,
@@ -151,13 +152,14 @@ def trace_handler(p, local_rank_):
 
 
 
-def save_phoinelm_hf(model_directory):
+def save_phoinelm_hf(model_directory, dtype=torch.float32):
 
     save_directory = model_directory.replace("checkpoints/", "checkpoints/mllmTeam/")
 
     tokenizer = AutoTokenizer.from_pretrained(model_directory+"best_ckpt")
     model = PhoneLMForCausalLM.from_pretrained(model_directory+"best_ckpt")
 
+    model = model.to(dtype)
     model.save_pretrained(save_directory)
     tokenizer.save_pretrained(save_directory)
 
@@ -181,3 +183,6 @@ def save_phoinelm_hf(model_directory):
         f.write(open("configuration_phonelm.py").read())
 
     print(f"save moodels in {save_directory}")
+
+if __name__ == "__main__":
+    save_phoinelm_hf("checkpoints/PhoneLM-1.5B-Instruct/", torch.bfloat16)

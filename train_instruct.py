@@ -220,6 +220,7 @@ def train(tokenizer, model, train_dataset, val_dataset):
         print("Training finished")
     best_path = os.path.join(output_dir, "best_ckpt")
     trainer.save_model(best_path)
+    save_phoinelm_hf(output_dir, trainer.model.dtype)
     if FLG_WANDB and is_main_process_using_local_rank(arg.local_rank):
         wandb.config.update({"best_path": best_path})
 
@@ -263,8 +264,6 @@ if __name__ == "__main__":
 
     print("train")
     train(tokenizer, model, train_dataset, val_dataset)
-
-
-    save_phoinelm_hf(output_dir)
+    
     if FLG_WANDB:
         wandb.finish()
