@@ -1,4 +1,4 @@
-## Data Preparation
+## Traning
 
 ### Stable Training Stage
 
@@ -51,7 +51,7 @@ train_datasets/
     ...
 ```
 
-**Pretrain**
+**Train**
 
 After performing the same operation on all datasets, the tokenized datasets are stored in `train_datasets`. Subsequently, you can start pretraining with the following command:
 ```bash
@@ -110,8 +110,41 @@ Format of processed data is as following:
 
 Then you can tokenize the `text` field to get the Decay Stage pretrain data using `pretokenize.py`.
 
+**Train**
 
-## how to run
+Subsequently, you can start decay stage training with the following command:
+```bash
+deepspeed train.py --config config_phonelm_1.5b_stage2.yaml
+```
+
+### Instruct Following Stage
+In this stage you need to initial dataset structure as followed:
+```
+- train_datasets_instruct
+|
+- - - dataset_00
+    |
+    - - -data_001.parquet
+    |
+    - - -data_002.parquet
+    |
+    - - - ...
+```
+**Train**
+
+Launch train command
+```shell
+deepspeed train_instruct.py --config config_phonelm_1.5b_instruct.yaml
+```
+If it is the first time loading train_datasets_instruct, two directories train_dataset_test and val_dataset_test will be generated in the train_datasets_instruct directory. Subsequently, data will be read directly from these two directories.
+
+
+
+
+
+
+## Inference
+You can use PhoneLM models as followed:
 ```python
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -137,23 +170,3 @@ out = model.generate(**inp,
 text = tokenizer.decode(out[0], skip_special_tokens=True)
 
 ```
-
-## how to sft
-Initial dataset structure
-```
-- train_datasets_instruct
-|
-- - - dataset_00
-    |
-    - - -data_001.parquet
-    |
-    - - -data_002.parquet
-    |
-    - - - ...
-```
-
-Launch train command
-```shell
-deepspeed train_instruct.py --config config_phonelm_1.5b_instruct.yaml
-```
-If it is the first time loading train_datasets_instruct, two directories train_dataset_test and val_dataset_test will be generated in the train_datasets_instruct directory. Subsequently, data will be read directly from these two directories.
