@@ -1,4 +1,7 @@
-## Traning
+This repository contains the code and documents in pre-training, fine-tuning, and evaluating PhoneLM [ref], a highly capable and efficient small language model family.
+The end-to-end demo of PhoneLM running on smartphone is available at [mllm](https://github.com/UbiquitousLearning/mllm).
+
+## Training
 
 ### Stable Training Stage
 
