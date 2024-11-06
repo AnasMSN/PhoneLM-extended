@@ -5,10 +5,10 @@ The end-to-end demo of PhoneLM running on smartphone is available at [mllm](http
 
   | HuggingFace |
   |-------------|
-  |[PhoneLM-1.5B-Base](https://huggingface.co/mllmTeam/PhoneLM-1.5B-Base)|
+  |[PhoneLM-1.5B](https://huggingface.co/mllmTeam/PhoneLM-1.5B)|
   |[PhoneLM-1.5B-Instruct](https://huggingface.co/mllmTeam/PhoneLM-1.5B-Instruct)|
   |[PhoneLM-1.5B-Call](https://huggingface.co/mllmTeam/PhoneLM-1.5B-Call)|
-  |[PhoneLM-0.5B-Base](https://huggingface.co/mllmTeam/PhoneLM-0.5B-Base)|
+  |[PhoneLM-0.5B](https://huggingface.co/mllmTeam/PhoneLM-0.5B)|
   |[PhoneLM-0.5B-Instruct](https://huggingface.co/mllmTeam/PhoneLM-0.5B-Instruct)|
 
 ## Evaluation Results

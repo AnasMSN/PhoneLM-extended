@@ -3,7 +3,7 @@ wandb: True
 resume: False
 profile: False
 training:
-    stage1_ckpt: "./checkpoints/PhoneLM-0.5B-Base/best_ckpt"
+    stage1_ckpt: "./checkpoints/PhoneLM-0.5B/best_ckpt"
     use_bf16: True
     context_size: 2048
     num_train_epochs: 1
