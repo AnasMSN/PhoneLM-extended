@@ -3,6 +3,7 @@
 
 import os
 os.environ["WANDB_PROJECT"] = "phonelm"
+os.environ["TOKENIZERS_PARALLELISM"] = "false" # avoid deadlock
 
 import wandb
 import argparse
@@ -44,13 +45,16 @@ weight_decay = config.get("training.weight_decay", 0.1)
 deepspeed_config =  config.get("training.deepspeed_config", "./ds_config_decaylr.json")
 per_device_train_batch_size = int(config.get("training.per_device_train_batch_size", 32))
 per_device_eval_batch_size = int(config.get("training.per_device_eval_batch_size", 48))
+gradient_checkpointing = config.get("training.gradient_checkpointing", True)
 gradient_accumulation_steps = int(config.get("training.gradient_accumulation_steps", 1))
 set_logging_steps = int(config.get("training.set_logging_steps", 20))
 set_eval_steps = int(config.get("training.set_eval_steps", 1000))
 set_save_steps = int(config.get("training.set_save_steps", 2000))
 set_compute_metrics = config.get("training.set_compute_metrics", False)
 bad_epochs_limit = int(config.get("training.bad_epochs_limit", 5))
-warmup_steps = int(config.get("training.warmup_steps", 1000))
+warmup_ratio = float(config.get("training.warmup_ratio", 0.10))
+warmup_steps = config.get("training.warmup_steps", None)
+warmup_steps = int(warmup_steps) if warmup_steps is not None else None
 max_steps = int(config.get("training.max_steps", -1))
 # ==========================================
 print(f"config: {config.config}")
@@ -70,7 +74,8 @@ def load_and_split_data(file_path, split_ratio=0.005):
     """
     print("Split ratio:", split_ratio)
     # File format
-    dataset = load_dataset('parquet', data_files=file_path)
+    data_type = config.get("datasets.data_type", "parquet")
+    dataset = load_dataset(data_type, data_files=file_path)
     
     # Split dataset
     split_dataset = dataset['train'].train_test_split(test_size=split_ratio)
@@ -134,7 +139,7 @@ def build_sft_dataset(data_path, split_ratio=0.005):
 
 def train(tokenizer, model, train_dataset, val_dataset):
     # Set training arguments
-    training_args = TrainingArguments(
+    args = dict(
         # We do not dispatch the dataloader, so each process will load the full dataset and pick by process index.
         accelerator_config={
             "dispatch_batches": False
@@ -143,7 +148,7 @@ def train(tokenizer, model, train_dataset, val_dataset):
         per_device_train_batch_size=per_device_train_batch_size,
         per_device_eval_batch_size=per_device_eval_batch_size,
         gradient_accumulation_steps=gradient_accumulation_steps,
-        gradient_checkpointing=True,
+        gradient_checkpointing=gradient_checkpointing,
         metric_for_best_model="eval_loss",
         max_steps=max_steps,
         bf16=use_bf16,
@@ -154,7 +159,7 @@ def train(tokenizer, model, train_dataset, val_dataset):
         adam_epsilon=adam_epsilon,
         weight_decay=weight_decay,
         num_train_epochs=num_train_epochs,
-        warmup_steps=warmup_steps,
+        warmup_ratio=warmup_ratio,
         # logging & evaluation strategies
         logging_dir="logs",
         logging_strategy="steps",
@@ -166,6 +171,11 @@ def train(tokenizer, model, train_dataset, val_dataset):
         load_best_model_at_end=True,
         deepspeed=deepspeed_config,  # Path to deepspeed config file
         report_to="all" if FLG_WANDB else "none",
+    )
+    if warmup_steps is not None:
+        args["warmup_steps"] = warmup_steps
+    training_args = TrainingArguments(
+        **args
     )
     print("Training arguments:", training_args)
     train_id = "local"
@@ -189,9 +199,9 @@ def train(tokenizer, model, train_dataset, val_dataset):
                 args=training_args,
                 train_dataset=train_dataset,
                 eval_dataset=val_dataset,
-                dataset_text_field="text",
+                # dataset_text_field="text",
                 max_seq_length=2048,
-                packing=True,
+                packing=config.get("datasets.packing", True),
                 compute_metrics=compute_metrics if set_compute_metrics else None,
                 tokenizer=tokenizer,
                 callbacks=(
@@ -212,8 +222,8 @@ def train(tokenizer, model, train_dataset, val_dataset):
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=val_dataset,
-            dataset_text_field="text",
-            packing=True,
+            # dataset_text_field="text",
+            packing=config.get("datasets.packing", True),
             max_seq_length=2048,
             compute_metrics=compute_metrics if set_compute_metrics else None,
             tokenizer=tokenizer,
@@ -261,10 +271,36 @@ if __name__ == "__main__":
     checkpoint_path = config.get("training.base_dir", f"./checkpoints/phonelm-1.5B_stage2/best_ckpt")
     print("================BASE:", checkpoint_path, "================\n")
     model = PhoneLMForCausalLM.from_pretrained(checkpoint_path, attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16)
+    if gradient_checkpointing:
+        model.config.use_cache = False
+    
+    if config.get("training.use_lora", False):
+        from peft import LoraConfig, get_peft_model
+        from peft import PeftModel
+        
+        peft_config = LoraConfig(
+            r=config.get("lora.r", 1),
+            lora_alpha=config.get("lora.alpha", 16),
+            lora_dropout=config.get("lora.dropout", 0.1),
+            bias="none",
+            task_type="CAUSAL_LM",
+            # q_proj,k_proj,gate_proj,down_proj,up_proj
+            target_modules=["q_proj", "k_proj", "gate_proj", "down_proj", "up_proj"],
+        )
+        if gradient_checkpointing:
+            # https://discuss.huggingface.co/t/peft-lora-gpt-neox-backward-pass-failing/35641/6
+            # need this to fix when using gradient checkpointing and lora
+            model.enable_input_require_grads()
+        
+        model = get_peft_model(model, peft_config)
+    print(f"model loaded: {model}")
+    
     
     print("load data")    
     data_path = config.get("datasets.path","./train_datasets_instruct")
     train_dataset, val_dataset = build_sft_dataset(data_path)
+    
+    print(f"train dataset: {train_dataset}")
 
     print("train")
     train(tokenizer, model, train_dataset, val_dataset)
