@@ -1,7 +1,95 @@
 This repository contains the code and documents in pre-training, fine-tuning, and evaluating PhoneLM [ref], a highly capable and efficient small language model family.
 The end-to-end demo of PhoneLM running on smartphone is available at [mllm](https://github.com/UbiquitousLearning/mllm).
 
-## Training
+## Model Downloads
+
+  | HuggingFace |
+  |-------------|
+  |[PhoneLM-1.5B-Base](https://huggingface.co/mllmTeam/PhoneLM-1.5B-Base)|
+  |[PhoneLM-1.5B-Instruct](https://huggingface.co/mllmTeam/PhoneLM-1.5B-Instruct)|
+  |[PhoneLM-1.5B-Call](https://huggingface.co/mllmTeam/PhoneLM-1.5B-Call)|
+  |[PhoneLM-0.5B-Base](https://huggingface.co/mllmTeam/PhoneLM-0.5B-Base)|
+  |[PhoneLM-0.5B-Instruct](https://huggingface.co/mllmTeam/PhoneLM-0.5B-Instruct)|
+
+## Evaluation Results
+
+### Comprehensive Evaluation
+| Name | Size | Date | Training tokens | HellaSwag | WinoGrande | PIQA | SciQ | BoolQ | ARC Easy | ARC Challenge | Average |
+|------|------|------|-----------------|-----------|------------|------|------|-------|----------|---------------|---------|
+| Pythia | 1.4B | 23.03 | 207B | 52.0 | 57.2 | 71.1 | 79.2 | 63.2 | 53.9 | 28.3 | 57.84 |
+| OPT | 1.3B | 22.05 | 180B | 53.7 | 59.0 | 71.0 | 78.1 | 57.2 | 51.3 | 28.0 | 56.90 |
+| BLOOM | 1.1B | 22.11 | 350B | 43.0 | 54.9 | 67.2 | 74.6 | 59.1 | 45.4 | 25.6 | 52.83 |
+| TinyLlama | 1.1B | 23.12 | 3B | 59.1 | 58.9 | 73.0 | 82.3 | 58.6 | 55.7 | 31.0 | 59.80 |
+| MobileLLaMA | 1.4B | 23.12 | 1.3T | 56.1 | 59.4 | 73.0 | 81.9 | 56.7 | 55.8 | 30.3 | 59.03 |
+| MobiLlama | 1B | 24.02 | 1.25T | 62.2 | 59.3 | 74.8 | 82.8 | 60.3 | 56.4 | 31.7 | 61.07 |
+| OpenELM | 1.1B | 24.04 | 1.5T | 64.8 | 61.7 | 75.6 | 83.6 | 63.6 | 55.4 | 32.3 | 62.43 |
+| DCLM | 1.4B | 24.08 | 4.3T | 53.6 | 66.3 | 77.0 | 94.0 | 71.4 | 74.8 | 41.2 | 68.33 |
+| SmolLM | 1.7B | 24.07 | 1T | 49.6 | 60.9 | 75.8 | 93.2 | 66.0 | 76.4 | 43.5 | 66.49 |
+| Qwen 1.5 | 1.8B | 24.02 | 2.4T | 60.9 | 60.5 | 74.2 | 89.4 | 66.5 | 59.1 | 34.7 | 63.61 |
+| Galactica | 1.3B | 22.11 | 106B | 41.0 | 54.4 | 63.8 | 87.7 | 62.0 | 58.6 | 30.5 | 56.86 |
+| StableLM 2 | 1.6B | 24.01 | 2T | 68.8 | 64.1 | 75.1 | 76.9 | 80.0 | 60.3 | 39.2 | 66.34 |
+| Cerebras-GPT | 1.3B | 23.03 | 371B | 38.4 | 51.9 | 66.8 | 73.0 | 59.3 | 45.8 | 25.3 | 51.50 |
+| MiniCPM | 1B | 24.04 | 1.2T | 67.5 | 63.7 | 75.1 | 91.0 | 70.5 | 62.9 | 38.1 | 66.97 |
+| MiniCPM | 2B | 24.04 | 1.2T | 67.2 | 63.9 | 76.1 | 92.5 | 74.6 | 69.0 | 42.7 | 69.43 |
+| Gemma | 2B | 24.02 | 3T | 71.4 | 65.2 | 78.4 | 91.4 | 69.9 | 72.3 | 42.0 | 70.09 |
+| Gemma 2 | 2B | 24.07 | 2T | 55.0 | 68.7 | 78.7 | 96.0 | 73.6 | 80.3 | 46.9 | 71.31 |
+| **PhoneLM** | **1.5B** | **24.11** | **1.5T** | **66.9** | **63.0** | **77.3** | **88.8** | **65.5** | **69.7** | **39.9** | **67.31** |
+
+### Android Function Call
+
+
+## Runnning PhoneLM
+
+### Huggingface
+```python
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+model_name = 'mllmTeam/PhoneLM-1.5B-Instruct'
+question = "Hello, who are you?"
+prompt = [{"role": "user", "content": question}]
+
+
+model = AutoModelForCausalLM.from_pretrained(model_name, device_map='cuda', trust_remote_code=True)
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+input_text = tokenizer.apply_chat_template(prompt, tokenize=False, add_generation_prompt=True)
+
+
+inp = tokenizer(input_text, return_tensors="pt")
+inp = {k: v.to('cuda') for k, v in inp.items()}
+out = model.generate(**inp, 
+                     max_length=256,
+                     do_sample=True,
+                     temperature=0.7,
+                     top_p=0.7
+                     )
+text = tokenizer.decode(out[0], skip_special_tokens=True)
+print(text)
+```
+### mllm
+
+We have provided the [mllm formats]((https://huggingface.co/mllm/phonelm-mllm)) of PhoneLM, which can be used in [mllm](https://github.com/UbiquitousLearning/mllm).
+
+Install mllm
+```shell
+git clone https://github.com/UbiquitousLearning/mllm.cpp
+cd mllm/scripts/
+build.sh
+```
+Inference
+```shell
+cd ../bin
+./demo_phone
+```
+
+## Training PhoneLM
+
+### Install Python Environment
+
+```bash
+pip install -r requirement.txt
+```
 
 ### Stable Training Stage
 
@@ -140,36 +228,3 @@ Launch train command
 deepspeed train_instruct.py --config config_phonelm_1.5b_instruct.yaml
 ```
 If it is the first time loading train_datasets_instruct, two directories train_dataset_test and val_dataset_test will be generated in the train_datasets_instruct directory. Subsequently, data will be read directly from these two directories.
-
-
-
-
-
-
-## Inference
-You can use PhoneLM models as followed:
-```python
-from transformers import AutoTokenizer, AutoModelForCausalLM
-
-model_name = 'mllmTeam/PhoneLM-1.5B-Instruct'
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
-
-model = model.to('cuda')
-
-question = "Hello, who are you?"
-chat = [
-    {"role": "user", "content": question},
-]
-
-prompt = tokenizer.apply_chat_template(chat, tokenize=False, add_generation_prompt=True)
-
-inp = tokenizer(prompt, return_tensors="pt")
-inp = {k: v.to('cuda') for k, v in inp.items()}
-out = model.generate(**inp, 
-                     max_length=256,
-                     do_sample=False
-                     )
-text = tokenizer.decode(out[0], skip_special_tokens=True)
-
-```
