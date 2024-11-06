@@ -211,16 +211,14 @@ deepspeed train.py --config config_phonelm_1.5b_stage2.yaml
 ### Instruct Following Stage
 In this stage you need to initial dataset structure as followed:
 ```
-- train_datasets_instruct
-|
-- - - dataset_00
-    |
-    - - -data_001.parquet
-    |
-    - - -data_002.parquet
-    |
-    - - - ...
+train_datasets_instructs/
+├── commitpackft
+│   ├── 000_commitpackft_00000.parquet
+│   └── ...
+└── ...
 ```
+The dataset construction is the same as in **Decay Stage**.
+
 **Train**
 
 Launch train command
@@ -228,3 +226,53 @@ Launch train command
 deepspeed train_instruct.py --config config_phonelm_1.5b_instruct.yaml
 ```
 If it is the first time loading train_datasets_instruct, two directories train_dataset_test and val_dataset_test will be generated in the train_datasets_instruct directory. Subsequently, data will be read directly from these two directories.
+
+### Function Call Tuning
+
+We fine-tuned our model on the DroidCall datasets to quip the model with the capability to operate Android phones. We have provided an instance for fine-tuning on DroidCall, you can also use your own way to fine-tune.
+
+First download the [DroidCall](https://huggingface.co/mllmTeam) dataset, move the data file to a directory `train_datasets_DroidCall` as followed:
+```
+train_datasets_DroidCall/
+└── DroidCall_code_short.jsonl
+```
+Note that `DroidCall_code_short.jsonl` has a short prompt while `DroidCall_code.jsonl` has a more detailed prompt.
+
+**Train**
+
+We provide a simple config to run the fine-tuning on DroidCall, you can simply start the training using the following command
+```bash
+deepspeed train_instruct.py --config config_phonelm_1.5b_DroidCall.yaml
+```
+
+
+
+
+
+## Inference
+You can use PhoneLM models as followed:
+```python
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+model_name = 'mllmTeam/PhoneLM-1.5B-Instruct'
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
+
+model = model.to('cuda')
+
+question = "Hello, who are you?"
+chat = [
+    {"role": "user", "content": question},
+]
+
+prompt = tokenizer.apply_chat_template(chat, tokenize=False, add_generation_prompt=True)
+
+inp = tokenizer(prompt, return_tensors="pt")
+inp = {k: v.to('cuda') for k, v in inp.items()}
+out = model.generate(**inp, 
+                     max_length=256,
+                     do_sample=False
+                     )
+text = tokenizer.decode(out[0], skip_special_tokens=True)
+
+```
