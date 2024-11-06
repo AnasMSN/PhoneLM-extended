@@ -48,7 +48,6 @@ gradient_accumulation_steps = int(config.get("training.gradient_accumulation_ste
 set_logging_steps = int(config.get("training.set_logging_steps", 20))
 set_eval_steps = int(config.get("training.set_eval_steps", 1000))
 set_save_steps = int(config.get("training.set_save_steps", 2000))
-set_compute_metrics = config.get("training.set_compute_metrics", False)
 bad_epochs_limit = int(config.get("training.bad_epochs_limit", 5))
 warmup_ratio = float(config.get("training.warmup_ratio", 0.10))
 warmup_steps = config.get("training.warmup_steps", None)
@@ -199,7 +198,7 @@ def train(tokenizer, model, train_dataset, val_dataset):
                 args=training_args,
                 train_dataset=train_dataset,
                 eval_dataset=val_dataset,
-                compute_metrics=compute_metrics if set_compute_metrics else None,
+                compute_metrics= None,
                 tokenizer=tokenizer,
                 callbacks=(
                     [EvaluateCallback(bad_epochs_limit, arg.local_rank, FLG_WANDB), TraceCallback(prof)]
@@ -219,7 +218,7 @@ def train(tokenizer, model, train_dataset, val_dataset):
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=val_dataset,
-            compute_metrics=compute_metrics if set_compute_metrics else None,
+            compute_metrics= None,
             tokenizer=tokenizer,
             callbacks=[EvaluateCallback(bad_epochs_limit, arg.local_rank, FLG_WANDB)],
         )

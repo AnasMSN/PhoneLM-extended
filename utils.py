@@ -1,9 +1,7 @@
 
 from modeling_phonelm import PhoneLMForCausalLM
 from configuration_phonelm import PhoneLMConfig
-import evaluate
-import nltk
-from nltk.tokenize import sent_tokenize
+
 import os
 import numpy as np
 import wandb
@@ -61,39 +59,6 @@ def is_main_process_using_local_rank(local_rank_) -> bool:
     return (local_rank == -1 or local_rank == 0) and (
         cross_rank == -1 or cross_rank == 0
     )  # -1 means serial, 0 likely means parallel
-
-
-
-def compute_metrics(eval_preds, tokenizer):
-
-    try:
-        nltk.data.find("tokenizers/punkt")
-    except LookupError:
-        nltk.download("punkt")
-    metric = evaluate.load("rouge")
-
-    preds, labels = eval_preds
-    if isinstance(preds, tuple):
-        preds = preds[0]
-    preds = np.argmax(preds, axis=-1)
-    decoded_preds = tokenizer.batch_decode(preds, skip_special_tokens=True)
-    labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
-    decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
-    decoded_preds = ["\n".join(sent_tokenize(pred.strip())) for pred in decoded_preds]
-    decoded_labels = [
-        "\n".join(sent_tokenize(label.strip())) for label in decoded_labels
-    ]
-
-    result = metric.compute(
-        predictions=decoded_preds, references=decoded_labels, use_stemmer=True
-    )
-    result = {k: round(v * 100, 4) for k, v in result.items()}
-    prediction_lens = [
-        np.count_nonzero(pred != tokenizer.pad_token_id) for pred in preds
-    ]
-    result["gen_len"] = np.mean(prediction_lens)
-    return result
-
 
 class EvaluateCallback(TrainerCallback):
     def __init__(self, bad_epochs_limit_, local_rank_, FLG_WANDB_):
@@ -185,4 +150,4 @@ def save_phoinelm_hf(model_directory, dtype=torch.float32):
     print(f"save moodels in {save_directory}")
 
 if __name__ == "__main__":
-    save_phoinelm_hf("checkpoints/PhoneLM-1.5B-Instruct/", torch.bfloat16)
+    save_phoinelm_hf("checkpoints/PhoneLM-1.5B-Call/", torch.bfloat16)
