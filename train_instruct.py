@@ -11,15 +11,13 @@ import torch
 from transformers import (
     AutoTokenizer,
     TrainingArguments,
-    TrainerCallback,
 )
-from trl import SFTTrainer
+from trl import SFTTrainer, SFTConfig
 from datasets import load_dataset, concatenate_datasets, load_from_disk
 
 
 from config import Config
 from modeling_phonelm import PhoneLMForCausalLM
-from configuration_phonelm import PhoneLMConfig
 from utils import *
 
 
@@ -164,7 +162,7 @@ def train(tokenizer, model, train_dataset, val_dataset):
         logging_dir="logs",
         logging_strategy="steps",
         logging_steps=set_logging_steps,  # Log every set_logging_steps steps
-        evaluation_strategy="steps",
+        eval_strategy="steps",
         eval_steps=set_eval_steps,  # Evaluate every set_eval_steps steps
         save_steps=set_save_steps,
         save_total_limit=6,
@@ -174,7 +172,9 @@ def train(tokenizer, model, train_dataset, val_dataset):
     )
     if warmup_steps is not None:
         args["warmup_steps"] = warmup_steps
-    training_args = TrainingArguments(
+    training_args = SFTConfig(
+        packing=config.get("datasets.packing", True),
+        max_seq_length=context_size,
         **args
     )
     print("Training arguments:", training_args)
@@ -199,9 +199,6 @@ def train(tokenizer, model, train_dataset, val_dataset):
                 args=training_args,
                 train_dataset=train_dataset,
                 eval_dataset=val_dataset,
-                # dataset_text_field="text",
-                max_seq_length=2048,
-                packing=config.get("datasets.packing", True),
                 compute_metrics=compute_metrics if set_compute_metrics else None,
                 tokenizer=tokenizer,
                 callbacks=(
@@ -222,9 +219,6 @@ def train(tokenizer, model, train_dataset, val_dataset):
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=val_dataset,
-            # dataset_text_field="text",
-            packing=config.get("datasets.packing", True),
-            max_seq_length=2048,
             compute_metrics=compute_metrics if set_compute_metrics else None,
             tokenizer=tokenizer,
             callbacks=[EvaluateCallback(bad_epochs_limit, arg.local_rank, FLG_WANDB)],
