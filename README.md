@@ -97,7 +97,7 @@ We have provided the [mllm formats]((https://huggingface.co/mllm/phonelm-mllm)) 
 
 Install mllm
 ```shell
-git clone https://github.com/UbiquitousLearning/mllm.cpp
+git clone https://github.com/UbiquitousLearning/mllm.git
 cd mllm/scripts/
 build.sh
 ```
