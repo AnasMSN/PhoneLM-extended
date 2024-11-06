@@ -104,7 +104,7 @@ build.sh
 Inference
 ```shell
 cd ../bin
-./demo_phonelm
+./demo_phonelm -m /path/to/model.mllm 
 ```
 
 ## Training PhoneLM
