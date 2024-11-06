@@ -255,7 +255,7 @@ If it is the first time loading train_datasets_instruct, two directories train_d
 
 We fine-tuned our model on the DroidCall datasets to quip the model with the capability to operate Android phones. We have provided an instance for fine-tuning on DroidCall, you can also use your own way to fine-tune.
 
-First download the [DroidCall](https://huggingface.co/mllmTeam) dataset, move the data file to a directory `train_datasets_DroidCall` as followed:
+First download the [DroidCall](https://huggingface.co/mllmTeam/DroidCall) dataset, move the data file to a directory `train_datasets_DroidCall` as followed:
 ```
 train_datasets_DroidCall/
 └── DroidCall_code_short.jsonl
