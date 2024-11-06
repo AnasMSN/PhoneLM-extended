@@ -42,19 +42,16 @@ The end-to-end demo of PhoneLM running on smartphone is available at [mllm](http
 
 ### Huggingface
 ```python
-import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 model_name = 'mllmTeam/PhoneLM-1.5B-Instruct'
 question = "Hello, who are you?"
 prompt = [{"role": "user", "content": question}]
 
-
 model = AutoModelForCausalLM.from_pretrained(model_name, device_map='cuda', trust_remote_code=True)
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 input_text = tokenizer.apply_chat_template(prompt, tokenize=False, add_generation_prompt=True)
-
 
 inp = tokenizer(input_text, return_tensors="pt")
 inp = {k: v.to('cuda') for k, v in inp.items()}
