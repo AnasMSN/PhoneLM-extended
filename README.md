@@ -16,6 +16,7 @@ The end-to-end demo of PhoneLM running on smartphone is available at [mllm](http
 ### Comprehensive Evaluation
 | Model | HellaSwag | WinoGrande | PIQA | SciQ | BoolQ | ARC Easy | ARC Challenge | Average |
 |-----------|-----------|------------|------|------|-------|----------|---------------|---------|
+| **PhoneLM-1.5B** | **66.9** | **63.0** | **77.3** | **88.8** | **65.5** | **69.7** | **39.9** | **67.31** |
 | Pythia-1.4B | 52.0 | 57.2 | 71.1 | 79.2 | 63.2 | 53.9 | 28.3 | 57.84 |
 | OPT-1.3B | 53.7 | 59.0 | 71.0 | 78.1 | 57.2 | 51.3 | 28.0 | 56.90 |
 | BLOOM-1.1B | 43.0 | 54.9 | 67.2 | 74.6 | 59.1 | 45.4 | 25.6 | 52.83 |
@@ -33,7 +34,6 @@ The end-to-end demo of PhoneLM running on smartphone is available at [mllm](http
 | MiniCPM-2B | 67.2 | 63.9 | 76.1 | 92.5 | 74.6 | 69.0 | 42.7 | 69.43 |
 | Gemma-2B | 71.4 | 65.2 | 78.4 | 91.4 | 69.9 | 72.3 | 42.0 | 70.09 |
 | Gemma 2-2B | 55.0 | 68.7 | 78.7 | 96.0 | 73.6 | 80.3 | 46.9 | 71.31 |
-| **PhoneLM-1.5B** | **66.9** | **63.0** | **77.3** | **88.8** | **65.5** | **69.7** | **39.9** | **67.31** |
 
 ### Android Function Call
 
@@ -52,8 +52,8 @@ across all function calls.
 
 | Model                   | Accuracy | Soft Accuracy |
 |-------------------------|----------|---------------|
-| PhoneLM-1.5B-Instruct   | 17.5     | 17.8          |
-| PhoneLM-1.5B-Call       | 76.5     | 89.3          |
+| **PhoneLM-1.5B-Instruct**   | **17.5**     | **17.8**          |
+| **PhoneLM-1.5B-Call**       | **76.5**     | **89.3**          |
 | Qwen2.5-Coder-1.5B      | 50.0     | 63.5          |
 | Qwen2.5-1.5B-Instruct   | 58.5     | 75.3          |
 | Phi-3.5-mini-instruct   | 62.0     | 77.7          |
