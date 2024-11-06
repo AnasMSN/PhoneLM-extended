@@ -80,7 +80,7 @@ build.sh
 Inference
 ```shell
 cd ../bin
-./demo_phone
+./demo_phonelm
 ```
 
 ## Training PhoneLM
