@@ -266,5 +266,5 @@ Note that `DroidCall_code_short.jsonl` has a short prompt while `DroidCall_code.
 
 We provide a simple config to run the fine-tuning on DroidCall, you can simply start the training using the following command
 ```bash
-deepspeed train_instruct.py --config config_phonelm_1.5b_DroidCall.yaml
+deepspeed train_instruct.py --config config_phonelm_1.5b_call.yaml
 ```

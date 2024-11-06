@@ -1,4 +1,4 @@
-name: PhoneLM-1.5B-DroidCall
+name: PhoneLM-1.5B-Call
 wandb: True
 resume: False
 profile: False
