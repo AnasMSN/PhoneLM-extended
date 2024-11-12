@@ -267,3 +267,19 @@ We provide a simple config to run the fine-tuning on DroidCall, you can simply s
 ```bash
 deepspeed train_instruct.py --config config_phonelm_1.5b_call.yaml
 ```
+
+## License
+The source code of PhoneLM is under the License of GPL-2.0.
+
+## Citation
+```
+@misc{yi2024phonelmanefficientcapablesmall,
+      title={PhoneLM:an Efficient and Capable Small Language Model Family through Principled Pre-training}, 
+      author={Rongjie Yi and Xiang Li and Weikai Xie and Zhenyan Lu and Chenghua Wang and Ao Zhou and Shangguang Wang and Xiwen Zhang and Mengwei Xu},
+      year={2024},
+      eprint={2411.05046},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2411.05046}, 
+}
+```
