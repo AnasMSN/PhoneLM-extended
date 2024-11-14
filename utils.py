@@ -142,12 +142,17 @@ def save_phoinelm_hf(model_directory, dtype=torch.float32):
     new_config._name_or_path = "./"
     new_config.save_pretrained(save_directory)
 
-    with open(f"{save_directory}/modeling_phonelm.py", "w") as f:
-        f.write(open("modeling_phonelm.py").read())
+    with open('configuration_phonelm.py', 'r', encoding='utf-8') as file:
+        file_data = file.read()
+    file_data = file_data.replace('from configuration_phonelm import PhoneLMConfig', 'from .configuration_phonelm import PhoneLMConfig')
+    with open('configuration_phonelm.py', 'w', encoding='utf-8') as file:
+        file.write(file_data)
+
     with open(f"{save_directory}/configuration_phonelm.py", "w") as f:
         f.write(open("configuration_phonelm.py").read())
+
 
     print(f"save moodels in {save_directory}")
 
 if __name__ == "__main__":
-    save_phoinelm_hf("checkpoints/PhoneLM-1.5B-Call/", torch.bfloat16)
+    save_phoinelm_hf("checkpoints/PhoneLM-0.5B-Instruct/", torch.bfloat16)
