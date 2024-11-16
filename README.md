@@ -1,4 +1,4 @@
-This repository contains the code and documents in pre-training, fine-tuning, and evaluating PhoneLM [ref], a highly capable and efficient small language model family.
+This repository contains the code and documents in pre-training, fine-tuning, and evaluating [PhoneLM](https://arxiv.org/abs/2411.05046), a highly capable and efficient small language model family.
 The end-to-end demo of PhoneLM running on smartphone is available at [mllm](https://github.com/UbiquitousLearning/mllm).
 
 ## Model Downloads
