@@ -58,8 +58,10 @@ if is_flash_attn_2_available():
 
 from transformers.pytorch_utils import (
     ALL_LAYERNORM_LAYERS,
-    is_torch_greater_or_equal_than_1_13,
 )
+
+def is_torch_greater_or_equal_than_1_13():
+    return True
 
 from transformers.modeling_attn_mask_utils import (
     AttentionMaskConverter,
